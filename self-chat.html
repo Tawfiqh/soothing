@@ -107,14 +107,19 @@
             justify-content: space-between;
         }
 
+        .bottom-container {
+            background: #fff;
+            border-top: 1px solid #eee;
+            padding: 10px;
+        }
+
         .prompt-suggestions {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin: 10px 0;
-            padding: 10px;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding: 5px;
             background: #fff;
-            border-radius: 10px;
         }
 
         .prompt-suggestion {
@@ -125,6 +130,10 @@
             cursor: pointer;
             font-size: 0.9em;
             transition: all 0.3s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
         }
 
         .prompt-suggestion:hover {
@@ -132,9 +141,6 @@
         }
 
         .input-container {
-            padding: 15px;
-            background: #fff;
-            border-top: 1px solid #eee;
             display: flex;
             gap: 10px;
         }
@@ -148,6 +154,7 @@
             resize: none;
             height: 40px;
             line-height: 20px;
+            max-height: 120px;
         }
 
         .send-button {
@@ -158,16 +165,11 @@
             border-radius: 20px;
             cursor: pointer;
             transition: background 0.3s;
+            white-space: nowrap;
         }
 
         .send-button:hover {
             background: #2980b9;
-        }
-
-        .therapist-prompts {
-            font-style: italic;
-            color: #666;
-            margin: 5px 0;
         }
 
         #save-button {
@@ -189,6 +191,27 @@
             transform: translateY(-2px);
         }
 
+        .prompt-scroll {
+            overflow-x: auto;
+            padding-bottom: 5px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #ddd transparent;
+        }
+
+        .prompt-scroll::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .prompt-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .prompt-scroll::-webkit-scrollbar-thumb {
+            background-color: #ddd;
+            border-radius: 2px;
+        }
+
         @media (max-width: 600px) {
             .container {
                 margin: 10px;
@@ -197,6 +220,10 @@
             
             .message {
                 max-width: 90%;
+            }
+
+            .prompt-suggestion {
+                max-width: 150px;
             }
         }
     </style>
@@ -209,9 +236,14 @@
             <div style="width: 40px;"></div>
         </div>
         <div id="chat-container"></div>
-        <div class="input-container">
-            <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
-            <button class="send-button" onclick="sendMessage()">Send</button>
+        <div class="bottom-container">
+            <div class="prompt-scroll">
+                <div id="prompt-suggestions" class="prompt-suggestions"></div>
+            </div>
+            <div class="input-container">
+                <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
+                <button class="send-button" onclick="sendMessage()">Send</button>
+            </div>
         </div>
     </div>
     <button id="save-button" onclick="saveConversation()">Save Session</button>
@@ -259,6 +291,7 @@
             roleSwitch.className = `role-indicator ${isTherapist ? 'role-therapist' : 'role-self'}`;
             roleSwitch.textContent = isTherapist ? 'Therapist' : 'You';
             updateInputPlaceholder();
+            updatePromptSuggestions();
         }
 
         function updateInputPlaceholder() {
@@ -266,6 +299,25 @@
             input.placeholder = isTherapist ? 
                 "Type your therapeutic response..." : 
                 "Express your thoughts...";
+        }
+
+        function updatePromptSuggestions() {
+            const promptsContainer = document.getElementById('prompt-suggestions');
+            promptsContainer.innerHTML = '';
+            
+            if (isTherapist) {
+                const currentPrompts = sessionStarted ? therapistPrompts.exploration : therapistPrompts.opening;
+                currentPrompts.forEach(prompt => {
+                    const promptButton = document.createElement('button');
+                    promptButton.className = 'prompt-suggestion';
+                    promptButton.textContent = prompt;
+                    promptButton.onclick = () => {
+                        addMessage(prompt, 'therapist');
+                        toggleRole();
+                    };
+                    promptsContainer.appendChild(promptButton);
+                });
+            }
         }
 
         function addMessage(text, role) {
@@ -283,34 +335,11 @@
             `;
             
             chatContainer.appendChild(messageDiv);
-
-            if (role === 'therapist' && !sessionStarted) {
-                addTherapistPrompts();
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            if (!sessionStarted && role === 'therapist') {
                 sessionStarted = true;
             }
-
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function addTherapistPrompts() {
-            const chatContainer = document.getElementById('chat-container');
-            const promptsDiv = document.createElement('div');
-            promptsDiv.className = 'prompt-suggestions';
-            
-            const currentPrompts = therapistPrompts.opening;
-            currentPrompts.forEach(prompt => {
-                const promptButton = document.createElement('button');
-                promptButton.className = 'prompt-suggestion';
-                promptButton.textContent = prompt;
-                promptButton.onclick = () => {
-                    toggleRole();
-                    addMessage(prompt, 'therapist');
-                    toggleRole();
-                };
-                promptsDiv.appendChild(promptButton);
-            });
-            
-            chatContainer.appendChild(promptsDiv);
         }
 
         function sendMessage() {
@@ -321,32 +350,8 @@
                 const role = isTherapist ? 'therapist' : 'self';
                 addMessage(message, role);
                 input.value = '';
-                
-                // Auto-switch roles after sending a message
+                input.style.height = '40px';
                 toggleRole();
-                
-                // Show prompt suggestions if it was a self message
-                if (role === 'self') {
-                    setTimeout(() => {
-                        const chatContainer = document.getElementById('chat-container');
-                        const promptsDiv = document.createElement('div');
-                        promptsDiv.className = 'prompt-suggestions';
-                        
-                        const prompts = therapistPrompts.exploration;
-                        prompts.forEach(prompt => {
-                            const promptButton = document.createElement('button');
-                            promptButton.className = 'prompt-suggestion';
-                            promptButton.textContent = prompt;
-                            promptButton.onclick = () => {
-                                addMessage(prompt, 'therapist');
-                                toggleRole();
-                            };
-                            promptsDiv.appendChild(promptButton);
-                        });
-                        
-                        chatContainer.appendChild(promptsDiv);
-                    }, 500);
-                }
             }
         }
 
@@ -375,7 +380,7 @@
         // Auto-grow textarea
         const textarea = document.getElementById('message-input');
         textarea.addEventListener('input', function() {
-            this.style.height = 'auto';
+            this.style.height = '40px';
             this.style.height = (this.scrollHeight) + 'px';
         });
 
