@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Reflection Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .inner-self {
+            background-color: #e3f2fd;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .reflective-self {
+            background-color: #f5f5f5;
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        #user-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .option-button {
+            background: #e3f2fd;
+            color: #2c3e50;
+            border: 1px solid #bbdefb;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .option-button:hover {
+            background: #bbdefb;
+        }
+
+        .timestamp {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        #save-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4CAF50;
+            z-index: 1000;
+        }
+
+        #save-button:hover {
+            background: #45a049;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Self-Reflection Dialog</h1>
+        <div id="chat-container"></div>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Share your thoughts..." autocomplete="off">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    <button id="save-button" onclick="saveConversation()">Save Conversation</button>
+
+    <script>
+        const prompts = {
+            initial: [
+                "What's on your mind today?",
+                "How are you feeling right now?",
+                "What would you like to explore about yourself?"
+            ],
+            emotional: [
+                "What emotions are coming up for you?",
+                "On a scale of 1-10, how intense is this feeling?",
+                "When did you first notice this emotion?"
+            ],
+            thoughtExploration: [
+                "What thoughts are behind these feelings?",
+                "What are you telling yourself about this situation?",
+                "What assumptions might you be making?"
+            ],
+            evidence: [
+                "What evidence supports this thought?",
+                "What evidence might challenge this thought?",
+                "Are you seeing the whole picture?"
+            ],
+            perspective: [
+                "How might someone else view this situation?",
+                "What would you tell a friend in this situation?",
+                "What's another way to look at this?"
+            ],
+            action: [
+                "What's one small step you could take?",
+                "What would be helpful right now?",
+                "What have you learned from this reflection?"
+            ]
+        };
+
+        let conversationState = {
+            stage: 'initial',
+            context: {},
+            messages: []
+        };
+
+        function getNextPrompt() {
+            const promptOptions = prompts[conversationState.stage];
+            return promptOptions[Math.floor(Math.random() * promptOptions.length)];
+        }
+
+        function progressConversation(message) {
+            switch(conversationState.stage) {
+                case 'initial':
+                    conversationState.stage = 'emotional';
+                    break;
+                case 'emotional':
+                    conversationState.stage = 'thoughtExploration';
+                    break;
+                case 'thoughtExploration':
+                    conversationState.stage = 'evidence';
+                    break;
+                case 'evidence':
+                    conversationState.stage = 'perspective';
+                    break;
+                case 'perspective':
+                    conversationState.stage = 'action';
+                    break;
+                case 'action':
+                    conversationState.stage = 'initial';
+                    break;
+            }
+            return getNextPrompt();
+        }
+
+        function addMessage(text, type) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            messageDiv.innerHTML = `
+                ${text}
+                <div class="timestamp">${timestamp}</div>
+            `;
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            conversationState.messages.push({
+                text,
+                type,
+                timestamp
+            });
+        }
+
+        function createOptionsButtons(prompt) {
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'options';
+            
+            const suggestions = [
+                "Tell me more about that",
+                "I'm not sure how I feel",
+                "That's interesting to explore",
+                "I need to think about this"
+            ];
+            
+            suggestions.forEach(suggestion => {
+                const button = document.createElement('button');
+                button.className = 'option-button';
+                button.textContent = suggestion;
+                button.onclick = () => {
+                    addMessage(suggestion, 'inner-self');
+                    setTimeout(() => {
+                        const response = progressConversation();
+                        addMessage(response, 'reflective-self');
+                    }, 500);
+                };
+                optionsDiv.appendChild(button);
+            });
+            
+            return optionsDiv;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                addMessage(message, 'inner-self');
+                input.value = '';
+                
+                setTimeout(() => {
+                    const response = progressConversation(message);
+                    addMessage(response, 'reflective-self');
+                    
+                    const chatContainer = document.getElementById('chat-container');
+                    chatContainer.appendChild(createOptionsButtons(response));
+                }, 500);
+            }
+        }
+
+        function saveConversation() {
+            const conversations = JSON.parse(localStorage.getItem('reflectionConversations') || '[]');
+            conversations.unshift({
+                date: new Date().toLocaleString(),
+                messages: conversationState.messages
+            });
+            localStorage.setItem('reflectionConversations', JSON.stringify(conversations));
+            alert('Conversation saved successfully!');
+        }
+
+        // Initialize the chat
+        window.onload = () => {
+            const initialPrompt = getNextPrompt();
+            addMessage(initialPrompt, 'reflective-self');
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.appendChild(createOptionsButtons(initialPrompt));
+        };
+
+        // Handle enter key
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
