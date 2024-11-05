@@ -1,3 +1,7 @@
+<!-- TODO
+ 1. Change when it shifts to the new stages of conversation -- it should just ask the user -- do you want to move to the next stage of conversation
+ 
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +14,7 @@
             margin: 0;
             padding: 0;
         }
-
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
@@ -19,7 +23,7 @@
             display: flex;
             flex-direction: column;
         }
-
+        
         .container {
             max-width: 800px;
             margin: 20px auto;
@@ -32,7 +36,7 @@
             overflow: hidden;
             width: calc(100vw - 20px);
         }
-
+        
         .header {
             padding: 15px;
             background: #fff;
@@ -42,7 +46,7 @@
             justify-content: space-between;
             align-items: center;
         }
-
+        
         .role-indicator {
             padding: 5px 10px;
             border-radius: 15px;
@@ -50,30 +54,30 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-
+        
         .role-self {
             background: #e3f2fd;
             color: #1565c0;
         }
-
+        
         .role-therapist {
             background: #f5f5f5;
             color: #2e7d32;
         }
-
+        
         .title {
             color: #2c3e50;
             flex-grow: 1;
             text-align: center;
         }
-
+        
         #chat-container {
             flex-grow: 1;
             overflow-y: auto;
             padding: 20px;
             background: #fafafa;
         }
-
+        
         .message {
             margin: 10px 0;
             max-width: 80%;
@@ -82,24 +86,24 @@
             position: relative;
             animation: fadeIn 0.3s ease-in;
         }
-
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
+        
         .self {
             background-color: #e3f2fd;
             margin-left: auto;
             border-bottom-right-radius: 5px;
         }
-
+        
         .therapist {
             background-color: #f1f8e9;
             margin-right: auto;
             border-bottom-left-radius: 5px;
         }
-
+        
         .message-info {
             font-size: 0.8em;
             color: #666;
@@ -107,13 +111,13 @@
             display: flex;
             justify-content: space-between;
         }
-
+        
         .bottom-container {
             background: #fff;
             border-top: 1px solid #eee;
             padding: 10px;
         }
-
+        
         .prompt-suggestions {
             display: flex;
             flex-wrap: wrap;
@@ -122,7 +126,7 @@
             padding: 5px;
             background: #fff;
         }
-
+        
         .prompt-suggestion {
             background: #f5f5f5;
             border: 1px solid #ddd;
@@ -134,18 +138,18 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 200px;
+            /* max-width: 200px; */
         }
-
+        
         .prompt-suggestion:hover {
             background: #e0e0e0;
         }
-
+        
         .input-container {
             display: flex;
             gap: 10px;
         }
-
+        
         #message-input {
             flex-grow: 1;
             padding: 10px;
@@ -157,7 +161,7 @@
             line-height: 20px;
             max-height: 120px;
         }
-
+        
         .send-button {
             background: #3498db;
             color: white;
@@ -168,11 +172,11 @@
             transition: background 0.3s;
             white-space: nowrap;
         }
-
+        
         .send-button:hover {
             background: #2980b9;
         }
-
+        
         #save-button {
             position: fixed;
             top: 20px;
@@ -186,12 +190,12 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             transition: all 0.3s;
         }
-
+        
         #save-button:hover {
             background: #45a049;
             transform: translateY(-2px);
         }
-
+        
         .prompt-scroll {
             overflow-x: auto;
             padding-bottom: 5px;
@@ -199,20 +203,20 @@
             scrollbar-width: thin;
             scrollbar-color: #ddd transparent;
         }
-
+        
         .prompt-scroll::-webkit-scrollbar {
             height: 4px;
         }
-
+        
         .prompt-scroll::-webkit-scrollbar-track {
             background: transparent;
         }
-
+        
         .prompt-scroll::-webkit-scrollbar-thumb {
             background-color: #ddd;
             border-radius: 2px;
         }
-
+        
         @media (max-width: 600px) {
             .container {
                 margin: 10px;
@@ -222,7 +226,7 @@
             .message {
                 max-width: 90%;
             }
-
+            
             .prompt-suggestion {
                 max-width: 150px;
             }
@@ -248,44 +252,63 @@
         </div>
     </div>
     <button id="save-button" onclick="saveConversation()">Save Session</button>
-
+    
     <script>
         let isTherapist = false;
         let sessionStarted = false;
-
+        
+        // Track the current stage and message count
+        let currentStage = 'opening';
+        let messageCount = 0;
+        
         const therapistPrompts = {
             opening: [
-                "What brings you here today?",
-                "How are you feeling right now?",
-                "What's on your mind?",
-                "What would you like to focus on today?"
+            "What brings you here today?",
+            "How are you feeling right now?",
+            "What's on your mind?",
+            "What would you like to focus on today?"
             ],
             exploration: [
-                "Tell me more about that...",
-                "How does that make you feel?",
-                "What thoughts come up when you experience this?",
-                "When did you first notice this?"
+            "Tell me more about that...",
+            "How does that make you feel?",
+            "What thoughts come up when you experience this?",
+            "When did you first notice this?"
             ],
             deepening: [
-                "What's beneath that feeling?",
-                "How do you make sense of that?",
-                "What does this remind you of?",
-                "What do you need in this situation?"
+            "What's beneath that feeling?",
+            "How do you make sense of that?",
+            "What does this remind you of?",
+            "What do you need in this situation?"
             ],
             challenge: [
-                "What evidence supports that thought?",
-                "Could there be another way to look at this?",
-                "What would you tell a friend in this situation?",
-                "What assumptions might you be making?"
+            "Could there be another way to look at this?",
+            "What would you tell a friend in this situation?",
+            "What assumptions might you be making?",
+            "What evidence supports or challenges these thoughts?"
             ],
             action: [
-                "What small step could you take?",
-                "How might you approach this differently?",
-                "What would be helpful right now?",
-                "What have you learned from this reflection?"
+            "What small step could you take?",
+            "How might you approach this differently?",
+            "What resources or support do you need to move forward?",
+            "What have you learned from this reflection?"
             ]
         };
-
+        
+        // Stage progression thresholds
+        const stageThresholds = {
+            opening: 0,
+            exploration: 2,
+            deepening: 4,
+            challenge: 6,
+            action: 8
+        };
+        
+        // Get random prompts from the current stage
+        function getRandomPrompts(promptArray, count) {
+            const shuffled = [...promptArray].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+        
         function toggleRole() {
             isTherapist = !isTherapist;
             const roleSwitch = document.getElementById('role-switch');
@@ -294,20 +317,38 @@
             updateInputPlaceholder();
             updatePromptSuggestions();
         }
-
+        
         function updateInputPlaceholder() {
             const input = document.getElementById('message-input');
             input.placeholder = isTherapist ? 
-                "Type your therapeutic response..." : 
-                "Express your thoughts...";
+            "Type your therapeutic response..." : 
+            "Express your thoughts...";
         }
+        
 
+        // Determine therapy stage based on message count
+        function determineStage(count) {
+            if (count >= stageThresholds.action) return 'action';
+            if (count >= stageThresholds.challenge) return 'challenge';
+            if (count >= stageThresholds.deepening) return 'deepening';
+            if (count >= stageThresholds.exploration) return 'exploration';
+            return 'opening';
+        }
+        
+        // Update prompt suggestions
         function updatePromptSuggestions() {
+            // Clear existing prompts
             const promptsContainer = document.getElementById('prompt-suggestions');
             promptsContainer.innerHTML = '';
-            
             if (isTherapist) {
-                const currentPrompts = sessionStarted ? therapistPrompts.exploration : therapistPrompts.opening;
+                const newStage = determineStage(messageCount);
+                if (newStage !== currentStage) {
+                    currentStage = newStage;
+                    // Add transition message
+                    addMessage(`Moving to ${currentStage} phase of the conversation`, 'therapist', true);
+                }
+
+                const currentPrompts = getRandomPrompts(therapistPrompts[currentStage], 3);
                 currentPrompts.forEach(prompt => {
                     const promptButton = document.createElement('button');
                     promptButton.className = 'prompt-suggestion';
@@ -320,29 +361,35 @@
                 });
             }
         }
-
-        function addMessage(text, role) {
+        
+        // Add message to chat
+        function addMessage(text, role, systemMessage = false) {
             const chatContainer = document.getElementById('chat-container');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
-            
+
+            if (role === 'therapist' && !systemMessage) {
+                console.log("systemMessage", systemMessage)
+                messageCount++;
+            }
+
             const timestamp = new Date().toLocaleTimeString();
             messageDiv.innerHTML = `
                 ${text}
                 <div class="message-info">
                     <span>${role === 'therapist' ? 'Therapist' : 'You'}</span>
-                    <span>${timestamp}</span>
+                    <span>${messageCount} -- ${timestamp}</span>
                 </div>
             `;
-            
+
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            
+                        
             if (!sessionStarted && role === 'therapist') {
                 sessionStarted = true;
             }
         }
-
+        
         function sendMessage() {
             const input = document.getElementById('message-input');
             const message = input.value.trim();
@@ -355,16 +402,16 @@
                 toggleRole();
             }
         }
-
+        
         function saveConversation() {
             const chatContainer = document.getElementById('chat-container');
             const messages = Array.from(chatContainer.getElementsByClassName('message'))
-                .map(msg => ({
-                    text: msg.firstChild.textContent.trim(),
-                    role: msg.classList.contains('therapist') ? 'therapist' : 'self',
-                    timestamp: msg.querySelector('.message-info').lastChild.textContent
-                }));
-
+            .map(msg => ({
+                text: msg.firstChild.textContent.trim(),
+                role: msg.classList.contains('therapist') ? 'therapist' : 'self',
+                timestamp: msg.querySelector('.message-info').lastChild.textContent
+            }));
+            
             const conversations = JSON.parse(localStorage.getItem('therapyConversations') || '[]');
             conversations.unshift({
                 date: new Date().toLocaleString(),
@@ -373,26 +420,26 @@
             localStorage.setItem('therapyConversations', JSON.stringify(conversations));
             alert('Session saved successfully!');
         }
-
+        
         // Initialize
         document.getElementById('role-switch').onclick = toggleRole;
         updateInputPlaceholder();
-
+        
         // Auto-grow textarea
         const textarea = document.getElementById('message-input');
         textarea.addEventListener('input', function() {
             this.style.height = '40px';
             this.style.height = (this.scrollHeight) + 'px';
         });
-
+        
         // Handle enter key (Shift+Enter for new line)
         textarea.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if ( (e.key === 'Enter' && !e.shiftKey) || (e.key === 'Enter' && e.metaKey) || (e.key === 'Enter' && e.metaLeft) ) {
                 e.preventDefault();
                 sendMessage();
             }
         });
-
+        
         // Start with a therapist prompt
         toggleRole();
         addMessage("Hello! What brings you here today?", 'therapist');
