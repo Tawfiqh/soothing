@@ -230,6 +230,10 @@
             border-radius: 2px;
         }
         
+        #prompt-stage p{
+            text-transform: capitalize;   
+        }
+        
         @media (max-width: 600px) {
             .container {
                 margin: 10px;
@@ -256,6 +260,7 @@
         <div id="chat-container"></div>
         <div class="bottom-container">
             <div class="prompt-scroll">
+                <div id="prompt-stage" class="prompt-suggestions"></div>
                 <div id="prompt-suggestions" class="prompt-suggestions"></div>
             </div>
             <div class="input-container">
@@ -361,6 +366,10 @@
             // Clear existing prompts
             const promptsContainer = document.getElementById('prompt-suggestions');
             promptsContainer.innerHTML = '';
+        
+            const promptsStage = document.getElementById('prompt-stage');
+            promptsStage.innerHTML = '';
+
             if (isTherapist) {
                 // const newStage = determineStage(messageCount);
                 // if (newStage !== currentStage) {
@@ -368,6 +377,11 @@
                 //     // Add transition message
                 //     addMessage(`Moving to ${currentStage} phase of the conversation`, 'therapist', true);
                 // }
+                
+                // Add a bit of text indicating the current stage
+                const currentStageText = document.createElement('p');
+                currentStageText.textContent = `${currentStage}`;
+                promptsStage.appendChild(currentStageText);
                 
                 const currentPrompts = getRandomPrompts(therapistPrompts[currentStage], 3);
                 currentPrompts.forEach(prompt => {
