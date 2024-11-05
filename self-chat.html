@@ -1,6 +1,6 @@
 <!-- TODO
- 1. Change when it shifts to the new stages of conversation -- it should just ask the user -- do you want to move to the next stage of conversation
- 
+1. Change when it shifts to the new stages of conversation -- it should just ask the user -- do you want to move to the next stage of conversation
+
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -143,6 +143,19 @@
         
         .prompt-suggestion:hover {
             background: #e0e0e0;
+        }
+        
+        .next-prompt{
+            font-style: italic;
+            color: #0490ff;
+            background-color: #e0eaf1;
+            border: 1px dashed #aeaeae;
+            padding: 8px 26px;
+        }
+        
+        
+        .next-prompt:hover {
+            background-color: #e3f2fd;
         }
         
         .input-container {
@@ -325,7 +338,7 @@
             "Express your thoughts...";
         }
         
-
+        
         // Determine therapy stage based on message count
         function determineStage(count) {
             if (count >= stageThresholds.action) return 'action';
@@ -334,6 +347,14 @@
             if (count >= stageThresholds.exploration) return 'exploration';
             return 'opening';
         }
+        function moveToNextStage(){
+            const stages = ['opening', 'exploration', 'deepening', 'challenge', 'action']
+            const currentStageIndex = stages.indexOf(currentStage)
+            
+            const newStage = stages[currentStageIndex + 1] || stages[0]
+            currentStage = newStage
+            return newStage
+        }
         
         // Update prompt suggestions
         function updatePromptSuggestions() {
@@ -341,13 +362,13 @@
             const promptsContainer = document.getElementById('prompt-suggestions');
             promptsContainer.innerHTML = '';
             if (isTherapist) {
-                const newStage = determineStage(messageCount);
-                if (newStage !== currentStage) {
-                    currentStage = newStage;
-                    // Add transition message
-                    addMessage(`Moving to ${currentStage} phase of the conversation`, 'therapist', true);
-                }
-
+                // const newStage = determineStage(messageCount);
+                // if (newStage !== currentStage) {
+                //     currentStage = newStage;
+                //     // Add transition message
+                //     addMessage(`Moving to ${currentStage} phase of the conversation`, 'therapist', true);
+                // }
+                
                 const currentPrompts = getRandomPrompts(therapistPrompts[currentStage], 3);
                 currentPrompts.forEach(prompt => {
                     const promptButton = document.createElement('button');
@@ -359,6 +380,15 @@
                     };
                     promptsContainer.appendChild(promptButton);
                 });
+                // Add a "next stage button"
+                const promptButton = document.createElement('button');
+                promptButton.className = 'prompt-suggestion next-prompt';
+                promptButton.textContent = "Do you want to move to the next stage of conversation ➡️ ➡️";
+                promptButton.onclick = () => {
+                    moveToNextStage()
+                    updatePromptSuggestions()
+                };
+                promptsContainer.appendChild(promptButton);
             }
         }
         
@@ -367,12 +397,12 @@
             const chatContainer = document.getElementById('chat-container');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
-
+            
             if (role === 'therapist' && !systemMessage) {
                 console.log("systemMessage", systemMessage)
                 messageCount++;
             }
-
+            
             const timestamp = new Date().toLocaleTimeString();
             messageDiv.innerHTML = `
                 ${text}
@@ -381,10 +411,10 @@
                     <span>${messageCount} -- ${timestamp}</span>
                 </div>
             `;
-
+            
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-                        
+            
             if (!sessionStarted && role === 'therapist') {
                 sessionStarted = true;
             }
